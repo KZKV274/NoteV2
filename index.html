@@ -1,0 +1,260 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta name="theme-color" content="#111827" />
+  <title>Work Notes</title>
+  <link rel="manifest" href="manifest.json" />
+  <link rel="icon" href="icons/icon-192.png" />
+  <link rel="stylesheet" href="styles.css" />
+  <meta name="description" content="Учёт проделанной работы: сотрудник, модель, цвет, размер, количество. Офлайн PWA." />
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <div class="logo" aria-hidden="true">🗒️</div>
+      <div>
+        <div class="title">Work Notes</div>
+        <div class="subtitle">идеальная версия • v3.0.0</div>
+      </div>
+    </div>
+    <nav class="tabs" role="tablist" aria-label="Навигация">
+      <button class="tab active" data-tab="add" role="tab" aria-selected="true">Добавить</button>
+      <button class="tab" data-tab="history" role="tab" aria-selected="false">История</button>
+      <button class="tab" data-tab="stats" role="tab" aria-selected="false">Статистика</button>
+      <button class="tab" data-tab="settings" role="tab" aria-selected="false">Настройки</button>
+    </nav>
+  </header>
+
+  <main class="container">
+    <section class="panel" id="tab-add">
+      <div class="row between">
+        <h2>Новая запись</h2>
+        <div class="row">
+          <button id="installBtn" class="btn primary hidden" type="button">Установить</button>
+        </div>
+      </div>
+
+      <div class="grid">
+        <div class="field">
+          <label>Сотрудник</label>
+          <div class="row">
+            <select id="employeeSelect"></select>
+            <button id="addEmployeeBtn" class="btn secondary" type="button">+ Сотр.</button>
+          </div>
+          <div class="hint">Если сотрудника нет в списке, добавь.</div>
+        </div>
+
+        <div class="field">
+          <label>Модель</label>
+          <div class="row">
+            <select id="modelSelect"></select>
+            <button id="addModelBtn" class="btn secondary" type="button">+ Модель</button>
+          </div>
+          <div class="hint">Список моделей можно заполнить во вкладке “Настройки”.</div>
+        </div>
+
+        <div class="field">
+          <label>Цвет</label>
+          <input id="colorInput" type="text" placeholder="например: чёрный / матовый" />
+          <div class="quick" id="quickColors"></div>
+        </div>
+
+        <div class="field">
+          <label>Размер</label>
+          <input id="sizeInput" type="text" placeholder="например: 42 или 36-54" />
+          <div class="quick" id="quickSizes"></div>
+        </div>
+
+        <div class="field">
+          <label>Количество</label>
+          <input id="qtyInput" type="number" inputmode="numeric" min="0" placeholder="например: 50" />
+          <div class="hint">Только число (шт).</div>
+        </div>
+
+        <div class="field" style="grid-column: 1 / -1;">
+          <label>Комментарий (необязательно)</label>
+          <input id="noteInput" type="text" placeholder="например: упаковка / маркировка / сканер" />
+        </div>
+      </div>
+
+      <div class="actions">
+        <button id="saveBtn" class="btn primary" type="button">Сохранить</button>
+        <button id="clearBtn" class="btn secondary" type="button">Очистить</button>
+      </div>
+
+      <div id="toast" class="toast" aria-live="polite"></div>
+      <div class="hint" id="installHint"></div>
+    </section>
+
+    <section class="panel hidden" id="tab-history">
+      <div class="row between">
+        <h2>История</h2>
+        <div class="row">
+          <button id="exportCsvBtn" class="btn secondary" type="button">CSV</button>
+          <button id="exportJsonBtn" class="btn secondary" type="button">Backup JSON</button>
+          <button id="wipeBtn" class="btn danger" type="button">Очистить всё</button>
+        </div>
+      </div>
+
+      <div class="grid">
+        <div class="field" style="grid-column: 1 / -1;">
+          <label>Поиск</label>
+          <input id="searchInput" type="text" placeholder="сотр. / модель / цвет / размер / комментарий" />
+        </div>
+
+        <div class="field">
+          <label>Фильтр по сотруднику</label>
+          <select id="filterEmployeeSelect"></select>
+        </div>
+
+        <div class="field">
+          <label>Фильтр по модели</label>
+          <select id="filterModelSelect"></select>
+        </div>
+
+        <div class="field">
+          <label>Дата (с)</label>
+          <input id="dateFromInput" type="date" />
+        </div>
+
+        <div class="field">
+          <label>Дата (по)</label>
+          <input id="dateToInput" type="date" />
+        </div>
+
+        <div class="field">
+          <label>Размер</label>
+          <input id="filterSizeInput" type="text" placeholder="например: 42" />
+        </div>
+
+        <div class="field">
+          <label>Быстро</label>
+          <div class="row wrap">
+            <button class="btn secondary tiny" id="quickTodayBtn" type="button">Сегодня</button>
+            <button class="btn secondary tiny" id="quickWeekBtn" type="button">Неделя</button>
+            <button class="btn secondary tiny" id="quickMonthBtn" type="button">Месяц</button>
+            <button class="btn secondary tiny" id="quickAllBtn" type="button">Всё</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="summary" id="summaryBox"></div>
+      <div class="list" id="historyList"></div>
+    </section>
+
+    <section class="panel hidden" id="tab-stats">
+      <div class="row between">
+        <h2>Статистика</h2>
+        <div class="row">
+          <select id="statsRangeSelect" class="miniSelect" title="Период">
+            <option value="today">Сегодня</option>
+            <option value="week">Неделя</option>
+            <option value="month">Месяц</option>
+            <option value="all">Всё</option>
+          </select>
+          <button id="refreshStatsBtn" class="btn secondary" type="button">Обновить</button>
+        </div>
+      </div>
+
+      <div class="cards">
+        <div class="card">
+          <div class="cardTitle">Всего</div>
+          <div class="cardBig" id="statsTotalQty">0</div>
+          <div class="cardSub" id="statsTotalRows">0 записей</div>
+        </div>
+        <div class="card">
+          <div class="cardTitle">Сотрудники</div>
+          <div class="cardBig" id="statsEmployees">0</div>
+          <div class="cardSub">уникальных</div>
+        </div>
+        <div class="card">
+          <div class="cardTitle">Модели</div>
+          <div class="cardBig" id="statsModels">0</div>
+          <div class="cardSub">уникальных</div>
+        </div>
+        <div class="card">
+          <div class="cardTitle">Размеры</div>
+          <div class="cardBig" id="statsSizes">0</div>
+          <div class="cardSub">уникальных</div>
+        </div>
+      </div>
+
+      <div class="grid2">
+        <div class="panel2">
+          <div class="panel2Title">Топ сотрудников</div>
+          <div id="topEmployees" class="bars"></div>
+        </div>
+        <div class="panel2">
+          <div class="panel2Title">Топ моделей</div>
+          <div id="topModels" class="bars"></div>
+        </div>
+      </div>
+
+      <div class="panel2" style="margin-top:12px;">
+        <div class="panel2Title">Динамика по дням</div>
+        <div id="dailyBars" class="bars"></div>
+        <div class="hint">Показаны последние 14 дней (или меньше, если период другой).</div>
+      </div>
+    </section>
+
+    <section class="panel hidden" id="tab-settings">
+      <div class="row between">
+        <h2>Настройки</h2>
+        <div class="row">
+          <button id="importJsonBtn" class="btn secondary" type="button">Импорт JSON</button>
+          <input id="importFile" type="file" accept="application/json" class="hidden" />
+        </div>
+      </div>
+
+      <div class="grid">
+        <div class="field">
+          <label>Быстрые цвета (через запятую)</label>
+          <input id="settingsColors" type="text" placeholder="Чёрный, Матовый, Белый, Серый" />
+          <div class="hint">Кнопки под полем “Цвет”.</div>
+        </div>
+        <div class="field">
+          <label>Быстрые размеры (через запятую)</label>
+          <input id="settingsSizes" type="text" placeholder="36,38,40,42,44,46,48,50,52,54" />
+          <div class="hint">Кнопки под полем “Размер”.</div>
+        </div>
+
+        <div class="field" style="grid-column:1/-1;">
+          <label>Шаблоны моделей (через запятую)</label>
+          <input id="settingsModels" type="text" placeholder="Little Italy, RA Success, BRIDGE Scanner" />
+          <div class="hint">Добавляет новые модели (не удаляет старые).</div>
+        </div>
+
+        <div class="field" style="grid-column:1/-1;">
+          <label>Шаблоны сотрудников (через запятую)</label>
+          <input id="settingsEmployees" type="text" placeholder="Алия, Нурия, ..." />
+          <div class="hint">Добавляет новых сотрудников (не удаляет старых).</div>
+        </div>
+      </div>
+
+      <div class="actions">
+        <button id="saveSettingsBtn" class="btn primary" type="button">Сохранить настройки</button>
+        <button id="resetSettingsBtn" class="btn danger" type="button">Сбросить только кнопки</button>
+      </div>
+
+      <div class="hint">
+        ⚠️ Данные хранятся на этом устройстве (localStorage). Для переноса используй Backup JSON и Импорт JSON.
+      </div>
+      <div id="settingsToast" class="toast" aria-live="polite"></div>
+    </section>
+  </main>
+
+  <script src="app.js?v=v3.0.0"></script>
+  <script>
+    if ("serviceWorker" in navigator) {
+      window.addEventListener("load", async () => {
+        try {
+          const reg = await navigator.serviceWorker.register("service-worker.js?v=v3.0.0");
+          reg.update();
+        } catch (e) {}
+      });
+    }
+  </script>
+</body>
+</html>
